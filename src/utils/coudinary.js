@@ -3,9 +3,9 @@ import fs from "fs"
 
 
 cloudinary.config({ 
-    cloud_name: 'doxoe6asd', 
-    api_key: '741894233781248', 
-    api_secret: '0s7Auz6WYsH2TWdUAps-JQeJ-qw' // Click 'View API Keys' above to copy your API secret
+    cloud_name: `${process.env.CLOUDINARY_CLOUD_NAME}`, 
+    api_key: `${process.env.CLOUDINARY_API_KEY}`, 
+    api_secret: `${process.env.CLOUDINARY_API_SECRET}` 
 });
 
 
