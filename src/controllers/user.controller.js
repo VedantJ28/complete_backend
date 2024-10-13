@@ -1,11 +1,28 @@
-import {asyncHandler} from "../utils/asyncHandler.js";
-import {ApiError} from "../utils/ApiError.js";
-import {User} from "../models/user.model.js";
-import {uploadOnCloudinary} from "../utils/coudinary.js"
-import {ApiResponse} from "../utils/ApiResponse.js"
-import { response } from "express";
+import { asyncHandler } from "../utils/asyncHandler.js";
+import { ApiError } from "../utils/ApiError.js";
+import { User } from "../models/user.model.js";
+import { uploadOnCloudinary } from "../utils/coudinary.js"
+import { ApiResponse } from "../utils/ApiResponse.js"
 
-const registerUser = asyncHandler (async (req,res) =>{
+
+const genrateAccessAndRefreshToken = async (userId) => {
+    try {
+        const user = await User.findById(userId);
+
+        const accessToken = user.generateAccessToken();
+        const refreshToken = user.generateRefreshToken();
+
+        user.refreshToken = refreshToken;
+        await user.save({ validateBeforeSave: false });
+
+        return { accessToken, refreshToken };
+
+    } catch (error) {
+        throw new ApiError(500, "Something went wrong while generatin accessToken and refreshToken");
+    }
+}
+
+const registerUser = asyncHandler(async (req, res) => {
     // Get user details from frontend
     // Validation of data - empty or not
     // Check if user already exist - username , email
@@ -17,21 +34,19 @@ const registerUser = asyncHandler (async (req,res) =>{
     // check for user successfull creation
     // return response
 
-    const {username, email, fullName, password} = req.body;
+    const { username, email, fullName, password } = req.body;
 
-
-    if(!username || !email || !fullName || !password){
+    if (!username || !email || !fullName || !password) {
         throw new ApiError(400, "All fields are required");
     }
 
-    if(password.length < 6){
+    if (password.length < 6) {
         throw new ApiError(400, "Password should be atleast 6 characters long");
     }
 
+    const userExist = await User.findOne({ $or: [{ email }, { username }] });
 
-    const userExist = await User.findOne({$or: [{email}, {username}]});
-
-    if(userExist){
+    if (userExist) {
         throw new ApiError(400, "User already exist with this email or username");
     }
 
@@ -39,23 +54,23 @@ const registerUser = asyncHandler (async (req,res) =>{
     // const coverImageLoaclPath = req.files?.coverImage[0]?.path;
 
     let coverImageLoaclPath;
-    if(req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0){
+    if (req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0) {
         coverImageLoaclPath = req.files.coverImage[0].path;
     }
 
-    if(!avatarLoacalPath){
+    if (!avatarLoacalPath) {
         throw new ApiError(400, "Avatar is required");
     }
 
     const avatar = await uploadOnCloudinary(avatarLoacalPath);
     const coverImage = await uploadOnCloudinary(coverImageLoaclPath);
 
-    if(!avatar){
+    if (!avatar) {
         throw new ApiError(400, "Avatar not uploaded");
     }
 
     const user = await User.create({
-        username: username.toLowerCase() , 
+        username: username.toLowerCase(),
         email,
         fullName,
         avatar: avatar.url,
@@ -67,7 +82,7 @@ const registerUser = asyncHandler (async (req,res) =>{
         "-password -refreshToken"
     );
 
-    if(!createdUser){
+    if (!createdUser) {
         throw new ApiError(500, "Something went wrong while creating user");
     }
 
@@ -75,9 +90,58 @@ const registerUser = asyncHandler (async (req,res) =>{
 
 });
 
-const getUsers = asyncHandler(async (req, res) => {
-    const users = await User.find().select("-password -refreshToken");
-    res.status(200).json(new ApiResponse(200, users, "All users fetched successfully"));
-});
+const loginUser = asyncHandler(async (req, res) => {
+    // Get credentials from frontend
+    // Validate credentials
+    // Compare credentials with database
+    // Generate access token and refresh token 
+    // save refresh token to database
+    // send response in cookies
 
-export {registerUser, getUsers};
+    const { email, username, password } = req.body;
+
+    if (!username && !email) {
+        throw new ApiError(400, "username or email is required");
+    }
+
+    const user = await User.findOne(
+        $or[{ username }, { email }]
+    );
+
+    if (!user) {
+        throw new ApiError(400, "User does not exist");
+    }
+
+    const isValidPassword = await user.isValidPassword(password);
+
+    if (!isValidPassword) {
+        throw new ApiError(400, "Incorrect credentials");
+    }
+
+    const { accessToken, refreshToken } = await genrateAccessAndRefreshToken(user._id);
+
+    const loggedInUser = await User.findById(user._id).select(
+        "-password -refreshToken"
+    );
+
+    const options = {
+        httpOnly : true,
+        secure : true
+    }
+
+    res.
+    status(200)
+    .cookie("accessToken",accessToken, options)
+    .cookie("refreshToken",refreshToken, options)
+    .json(
+        new ApiResponse(
+            200,
+            {
+                user: loggedInUser, accessToken, refreshToken
+            },
+            "User logged in successfully"
+        )
+    );
+})
+
+export { registerUser, loginUser };
