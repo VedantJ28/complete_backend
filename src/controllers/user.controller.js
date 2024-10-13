@@ -28,10 +28,6 @@ const registerUser = asyncHandler (async (req,res) =>{
         throw new ApiError(400, "Password should be atleast 6 characters long");
     }
 
-    // const emailRegex = /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/;
-    // if(!emailRegex.test(email)){
-    //     throw new ApiError(400, "Invalid email format");
-    // }
 
     const userExist = await User.findOne({$or: [{email}, {username}]});
 
@@ -40,7 +36,12 @@ const registerUser = asyncHandler (async (req,res) =>{
     }
 
     const avatarLoacalPath = req.files?.avatar[0]?.path;
-    const coverImageLoaclPath = req.files?.coverImage[0]?.path;
+    // const coverImageLoaclPath = req.files?.coverImage[0]?.path;
+
+    let coverImageLoaclPath;
+    if(req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0){
+        coverImageLoaclPath = req.files.coverImage[0].path;
+    }
 
     if(!avatarLoacalPath){
         throw new ApiError(400, "Avatar is required");
@@ -71,7 +72,12 @@ const registerUser = asyncHandler (async (req,res) =>{
     }
 
     res.status(201).json(new ApiResponse(201, createdUser, "User created successfully"));
-    
+
 });
 
-export {registerUser};
+const getUsers = asyncHandler(async (req, res) => {
+    const users = await User.find().select("-password -refreshToken");
+    res.status(200).json(new ApiResponse(200, users, "All users fetched successfully"));
+});
+
+export {registerUser, getUsers};
