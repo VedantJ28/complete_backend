@@ -26,4 +26,4 @@ export const verifyJWT = asyncHandler(async (req,res, next) =>{
     } catch (error) {
         throw new ApiError(500, error?.message || "Internal server error");
     }
-})
+});

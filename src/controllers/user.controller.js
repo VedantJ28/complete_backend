@@ -4,7 +4,6 @@ import { User } from "../models/user.model.js";
 import { uploadOnCloudinary } from "../utils/coudinary.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
 
-
 const genrateAccessAndRefreshToken = async (userId) => {
     try {
         const user = await User.findById(userId);
@@ -142,6 +141,34 @@ const loginUser = asyncHandler(async (req, res) => {
             "User logged in successfully"
         )
     );
-})
+});
 
-export { registerUser, loginUser };
+const logoutUser = asyncHandler(async (req, res) =>{
+    await User.findByIdAndUpdate(
+        req.user._id,
+        {
+            $set: {
+                refreshToken : undefined
+            }
+        },
+        {
+            new: true
+        }
+    )
+
+    const options = {
+        httpOnly : true,
+        secure : true
+    }
+
+    res.
+    status(200)
+    .clearCookie("accessToken", options)
+    .clearCookie("refreshToken", options)
+    .json(
+        new ApiResponse(200, {}, "User Logged Out")
+    );
+
+});
+
+export { registerUser, loginUser, logoutUser };
