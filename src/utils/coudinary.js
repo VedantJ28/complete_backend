@@ -2,11 +2,12 @@ import { v2 as cloudinary } from "cloudinary";
 import fs from "fs"
 
 
-cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API ,
-    api_secret: process.env.CLOUDINARY_API_SECRET 
-})
+cloudinary.config({ 
+    cloud_name: 'doxoe6asd', 
+    api_key: '741894233781248', 
+    api_secret: '0s7Auz6WYsH2TWdUAps-JQeJ-qw' // Click 'View API Keys' above to copy your API secret
+});
+
 
 const uploadOnCloudinary = async (localfilepath) => {
     try {
@@ -16,7 +17,7 @@ const uploadOnCloudinary = async (localfilepath) => {
             resource_type: "auto"
         });
 
-        console.log("File uploaded successfull", response.url);
+        // console.log("File uploaded successfull", response.url);
 
         return response;
     }
@@ -24,6 +25,7 @@ const uploadOnCloudinary = async (localfilepath) => {
         fs.unlink(localfilepath, ()=>{
             console.log("Error in uploading file on cloudinary");
         })
+        // console.log(localfilepath);
 
         return null;
     }

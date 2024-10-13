@@ -3,6 +3,7 @@ import {ApiError} from "../utils/ApiError.js";
 import {User} from "../models/user.model.js";
 import {uploadOnCloudinary} from "../utils/coudinary.js"
 import {ApiResponse} from "../utils/ApiResponse.js"
+import { response } from "express";
 
 const registerUser = asyncHandler (async (req,res) =>{
     // Get user details from frontend
@@ -27,10 +28,10 @@ const registerUser = asyncHandler (async (req,res) =>{
         throw new ApiError(400, "Password should be atleast 6 characters long");
     }
 
-    const emailRegex = /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/;
-    if(!emailRegex.test(email)){
-        throw new ApiError(400, "Invalid email format");
-    }
+    // const emailRegex = /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/;
+    // if(!emailRegex.test(email)){
+    //     throw new ApiError(400, "Invalid email format");
+    // }
 
     const userExist = await User.findOne({$or: [{email}, {username}]});
 
@@ -49,9 +50,9 @@ const registerUser = asyncHandler (async (req,res) =>{
     const coverImage = await uploadOnCloudinary(coverImageLoaclPath);
 
     if(!avatar){
-        throw new ApiError(400, "Avatar is required");
+        throw new ApiError(400, "Avatar not uploaded");
     }
-    
+
     const user = await User.create({
         username: username.toLowerCase() , 
         email,
@@ -69,9 +70,7 @@ const registerUser = asyncHandler (async (req,res) =>{
         throw new ApiError(500, "Something went wrong while creating user");
     }
 
-    return res.send(200).json(
-        new ApiResponse(201, createdUser, "User registered successfully");
-    )
+    res.status(201).json(new ApiResponse(201, createdUser, "User created successfully"));
     
 });
 
