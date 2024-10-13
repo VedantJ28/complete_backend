@@ -1,12 +1,12 @@
-import { ApiError } from "../utils/ApiError";
-import { asyncHandler } from "../utils/asyncHandler";
+import { ApiError } from "../utils/ApiError.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
 import jwt from "jsonwebtoken";
-import { User } from "../models/user.model";
+import { User } from "../models/user.model.js";
 
 export const verifyJWT = asyncHandler(async (req,res, next) =>{
     try {
-        const token = req.cookies?.accessToken || req.header(Authorization)?.replace("Bearer ", "");
-    
+        const token = req.cookies?.accessToken || req.header('Authorization')?.replace("Bearer ", "");
+        
         if(!token){
             throw new ApiError(401, "Token not found");
         }
@@ -24,6 +24,12 @@ export const verifyJWT = asyncHandler(async (req,res, next) =>{
         req.user = user;
         next();
     } catch (error) {
-        throw new ApiError(500, error?.message || "Internal server error");
+        if (error instanceof jwt.JsonWebTokenError) {
+            throw new ApiError(401, "Invalid token");
+        } else if (error instanceof jwt.TokenExpiredError) {
+            throw new ApiError(401, "Token has expired");
+        } else {
+            throw new ApiError(500, error?.message || "Internal server error");
+        }
     }
 });

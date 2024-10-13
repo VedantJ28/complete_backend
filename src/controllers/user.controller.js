@@ -32,6 +32,7 @@ const registerUser = asyncHandler(async (req, res) => {
     // remove password and refresh token from response
     // check for user successfull creation
     // return response
+    console.log(req.body);
 
     const { username, email, fullName, password } = req.body;
 
@@ -89,7 +90,7 @@ const registerUser = asyncHandler(async (req, res) => {
 
 });
 
-const loginUser = asyncHandler(async (req, res) => {
+const loginUser = asyncHandler( async (req, res) => {
     // Get credentials from frontend
     // Validate credentials
     // Compare credentials with database
@@ -97,15 +98,17 @@ const loginUser = asyncHandler(async (req, res) => {
     // save refresh token to database
     // send response in cookies
 
-    const { email, username, password } = req.body;
+    // console.log(req.body);
 
-    if (!username && !email) {
+    const {email, password} = req.body
+    // console.log(email);
+
+
+    if (!(email)) {
         throw new ApiError(400, "username or email is required");
     }
 
-    const user = await User.findOne(
-        $or[{ username }, { email }]
-    );
+    const user = await User.findOne({email});
 
     if (!user) {
         throw new ApiError(400, "User does not exist");
