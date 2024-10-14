@@ -222,4 +222,45 @@ const accessTokenRefresh = asyncHandler(async (req, res) =>{
     } 
 });
 
-export { registerUser, loginUser, logoutUser, accessTokenRefresh };
+const changeCurrentPassword = asyncHandler(async (req, res) => {    
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+        throw new ApiError(400, "All fields are required");
+    }
+
+    if (newPassword.length < 6) {
+        throw new ApiError(400, "Password should be atleast 6 characters long");
+    }
+
+    const user = await User.findById(req.user?._id);
+
+    if (!user) {
+        throw new ApiError(400, "User does not exist");
+    }
+
+    const isValidPassword = await user.isValidPassword(currentPassword);
+
+    if (!isValidPassword) {
+        throw new ApiError(400, "Incorrect current password");
+    }
+
+    user.password = newPassword;
+    await user.save({ validateBeforeSave: false });
+
+    res.
+    status(200).
+    json(
+        new ApiResponse(200, {}, "Password changed successfully")
+    );
+});
+
+const getCurrentUser = asyncHandler(async (req, res) =>{
+    res.
+    status(200)
+    .json(
+        new ApiResponse(200, req.user, "User fetched successfully")
+    )
+});
+
+export { registerUser, loginUser, logoutUser, accessTokenRefresh, changeCurrentPassword, getCurrentUser };
