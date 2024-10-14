@@ -21,5 +21,7 @@ router.route('/refresh-token').post(accessTokenRefresh);
 router.route('/change-password').post(verifyJWT, changeCurrentPassword);
 router.route('/me').get(verifyJWT, getCurrentUser);
 router.route('/update-account-details').put(verifyJWT, updateAccountDetails);
+router.route('/update-avatar').put(verifyJWT, upload.single('avatar'), updateUserAvater);
+router.route('/update-cover-image').put(verifyJWT, upload.single('coverImage'), updateUserCoverImage);
 
 export default router;
