@@ -263,4 +263,37 @@ const getCurrentUser = asyncHandler(async (req, res) =>{
     )
 });
 
-export { registerUser, loginUser, logoutUser, accessTokenRefresh, changeCurrentPassword, getCurrentUser };
+const updateAccountDetails = asyncHandler(async (req, res) => {
+    const { username, email, fullName } = req.body;
+
+    if (!username || !email || !fullName) {
+        throw new ApiError(400, "All fields are required");
+    }
+
+    const user = await User.findById(req.user._id).select("-password -refreshToken");
+
+    if (!user) {
+        throw new ApiError(400, "User does not exist");
+    }
+
+    user.username = username;
+    user.email = email;
+    user.fullName = fullName;
+    await user.save({ validateBeforeSave: false });
+
+    res.
+    status(200)
+    .json(
+        new ApiResponse(200, {}, "Account details updated successfully")
+    );
+});
+
+export { 
+    registerUser,
+    loginUser,
+    logoutUser,
+    accessTokenRefresh,
+    changeCurrentPassword,
+    getCurrentUser,
+    updateAccountDetails
+};
